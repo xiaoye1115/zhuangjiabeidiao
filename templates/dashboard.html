@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - 专家背调系统{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .chart-area {
+        position: relative;
+        height: 300px;
+        margin: 0 auto;
+    }
+    .chart-pie {
+        position: relative;
+        height: 250px;
+        margin: 0 auto;
+    }
+    .border-left-primary {
+        border-left: 4px solid #4e73df;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    .border-left-info {
+        border-left: 4px solid #36b9cc;
+    }
+    .border-left-warning {
+        border-left: 4px solid #f6c23e;
+    }
+    .border-left-danger {
+        border-left: 4px solid #e74a3b;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .text-gray-800 {
+        color: #5a5c69;
+    }
+    .text-gray-300 {
+        color: #dddfeb;
+    }
+    .legend-item {
+        display: inline-block;
+        margin-right: 10px;
+    }
+    .legend-circle {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .legend-success {
+        background-color: #1cc88a;
+    }
+    .legend-warning {
+        background-color: #f6c23e;
+    }
+    .legend-danger {
+        background-color: #e74a3b;
+    }
+    
+    /* 可信度标签样式 */
+    .credibility-badge {
+        font-size: 14px;
+        padding: 5px 10px;
+        display: inline-block;
+        border-radius: 0.25rem;
+        font-weight: bold;
+    }
+    .credibility-badge i {
+        margin-right: 5px;
+    }
+    .credibility-trusted {
+        background-color: #1cc88a;
+        color: white;
+    }
+    .credibility-questioned {
+        background-color: #f6c23e;
+        color: #212529;
+    }
+    .credibility-untrusted {
+        background-color: #e74a3b;
+        color: white;
+    }
+    .credibility-unrated {
+        background-color: #858796;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">仪表盘</h1>
+    
+    <!-- 统计卡片 -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">总查询次数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-queries">{{ stats.total_queries }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">今日查询</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-queries">{{ stats.today_queries }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">可信专家比例</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800" id="trusted-percentage">0%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar" id="trusted-progress"
+                                            style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">负面舆情数</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="negative-news">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="row">
+        <!-- 查询趋势图 -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">查询趋势（近30天）</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="queryTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 可信度分布图 -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">可信度分布</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="trustDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <div class="legend-item">
+                            <span class="legend-circle legend-success"></span>可信
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-circle legend-warning"></span>质疑
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-circle legend-danger"></span>不可信
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近查询记录 -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">最近查询记录</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="recent-queries-table">
+                    <thead>
+                        <tr>
+                            <th>查询时间</th>
+                            <th>专家姓名</th>
+                            <th>工作单位</th>
+                            <th>验证状态</th>
+                            <th>可信度</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_records %}
+                        <tr>
+                            <td>{{ record.query_time }}</td>
+                            <td>{{ record.expert_name }}</td>
+                            <td>{{ record.affiliation }}</td>
+                            <td>
+                                {% if record.verification_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">待验证</span>
+                                {% elif record.verification_status == 'verified' %}
+                                <span class="badge bg-success">已验证</span>
+                                {% else %}
+                                <span class="badge bg-danger">验证失败</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.total_score is not none %}
+                                    {% if record.total_score >= 80 %}
+                                        <span class="credibility-badge credibility-trusted">
+                                            <i class="fas fa-check-circle"></i> 可信 ({{ "%.1f"|format(record.total_score) }})
+                                        </span>
+                                    {% elif record.total_score >= 60 %}
+                                        <span class="credibility-badge credibility-questioned">
+                                            <i class="fas fa-exclamation-circle"></i> 质疑 ({{ "%.1f"|format(record.total_score) }})
+                                        </span>
+                                    {% else %}
+                                        <span class="credibility-badge credibility-untrusted">
+                                            <i class="fas fa-times-circle"></i> 不可信 ({{ "%.1f"|format(record.total_score) }})
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="credibility-badge credibility-unrated">
+                                        <i class="fas fa-question-circle"></i> 未评分
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/verification/{{ record.id }}" class="btn btn-sm btn-primary">查看详情</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- 分页控件 -->
+                {% if pagination and pagination.pages > 1 %}
+                <nav aria-label="查询记录分页">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('dashboard', page=pagination.prev_num) }}" aria-label="上一页">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&laquo;</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == pagination.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('dashboard', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('dashboard', page=pagination.next_num) }}" aria-label="下一页">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+// 初始化趋势图
+const ctx = document.getElementById('queryTrendChart').getContext('2d');
+const queryTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ stats.trend_dates | tojson if stats.trend_dates else '[]' | safe }},
+        datasets: [{
+            label: '每日查询次数',
+            data: {{ stats.trend_counts | tojson if stats.trend_counts else '[]' | safe }},
+            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            pointRadius: 3,
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHoverRadius: 3,
+            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    maxTicksLimit: 7
+                }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    maxTicksLimit: 5,
+                    padding: 10,
+                    precision: 0
+                },
+                grid: {
+                    color: "rgb(234, 236, 244)",
+                    drawBorder: false,
+                    borderDash: [2]
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyColor: "#858796",
+                titleMarginBottom: 10,
+                titleColor: '#6e707e',
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                padding: 15,
+                displayColors: false,
+                intersect: false,
+                mode: 'index',
+                caretPadding: 10,
+                callbacks: {
+                    label: function(context) {
+                        return `查询次数: ${context.raw}`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// 初始化可信度分布图
+const ctxPie = document.getElementById('trustDistributionChart').getContext('2d');
+const distributionData = [
+    {% if stats.trust_distribution and stats.trust_distribution.trusted %}{{ stats.trust_distribution.trusted }}{% else %}0{% endif %},
+    {% if stats.trust_distribution and stats.trust_distribution.questioned %}{{ stats.trust_distribution.questioned }}{% else %}0{% endif %},
+    {% if stats.trust_distribution and stats.trust_distribution.untrusted %}{{ stats.trust_distribution.untrusted }}{% else %}0{% endif %}
+];
+const trustDistributionChart = new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+        labels: ['可信', '质疑', '不可信'],
+        datasets: [{
+            data: distributionData,
+            backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+            hoverBackgroundColor: ['#17a673', '#dda20a', '#be2617'],
+            hoverBorderColor: "rgba(234, 236, 244, 1)"
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                padding: 15,
+                displayColors: false,
+                caretPadding: 10
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// 定时更新数据
+function updateDashboard() {
+    fetch('/api/dashboard/stats')
+        .then(response => response.json())
+        .then(data => {
+            // 更新统计数字
+            document.getElementById('total-queries').textContent = data.total_queries;
+            document.getElementById('today-queries').textContent = data.today_queries;
+            
+            // 更新可信度比例
+            if (data.trust_distribution) {
+                const trusted = data.trust_distribution.trusted || 0;
+                const questioned = data.trust_distribution.questioned || 0;
+                const untrusted = data.trust_distribution.untrusted || 0;
+                const total = trusted + questioned + untrusted;
+                
+                // 更新可信专家比例
+                const trustedPercentage = total > 0 ? Math.round((trusted / total) * 100) : 0;
+                document.getElementById('trusted-percentage').textContent = `${trustedPercentage}%`;
+                document.getElementById('trusted-progress').style.width = `${trustedPercentage}%`;
+                document.getElementById('trusted-progress').setAttribute('aria-valuenow', trustedPercentage);
+                
+                // 更新负面舆情数
+                document.getElementById('negative-news').textContent = data.negative_news_count || 0;
+                
+                // 更新可信度分布图
+                trustDistributionChart.data.datasets[0].data = [trusted, questioned, untrusted];
+                trustDistributionChart.update();
+            }
+            
+            // 更新趋势图
+            if (data.trend_dates && data.trend_counts) {
+                queryTrendChart.data.labels = data.trend_dates;
+                queryTrendChart.data.datasets[0].data = data.trend_counts;
+                queryTrendChart.update();
+            }
+        })
+        .catch(error => console.error('Error updating dashboard:', error));
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始加载
+    updateDashboard();
+    
+    // 每60秒更新一次数据
+    setInterval(updateDashboard, 60000);
+});
+</script>
+{% endblock %} 

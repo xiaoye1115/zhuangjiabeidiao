@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}验证专家信息 - 专家背调系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center mb-4">验证专家信息</h1>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">专家姓名</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="birth_year" class="form-label">出生年月</label>
+                        <input type="text" class="form-control" id="birth_year" name="birth_year" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="affiliation" class="form-label">工作单位</label>
+                        <input type="text" class="form-control" id="affiliation" name="affiliation" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="credit_code" class="form-label">工作单位统一社会信用代码</label>
+                        <input type="text" class="form-control" id="credit_code" name="credit_code" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="title" class="form-label">职称职务</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">批量验证（上传Excel文件）</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".xlsx, .xls">
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">验证</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
